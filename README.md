@@ -5,7 +5,7 @@ Uses Hybrid [Demucs](https://github.com/facebookresearch/demucs), a source separ
 
 
 ###Requirements
-_**PyTorch:**_ \
+_**PyTorch:**_
 - Windows with Cuda: ```pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118```
 
 - Windows without Cuda: ```pip3 install torch torchvision torchaudio```
