@@ -24,11 +24,10 @@ import urllib.error
 
 import tkinter
 from tkinter import filedialog
+import platform
 
 import torch, torchaudio
 import torchaudio.prototype.transforms
-
-import librosa
 
 import matplotlib.pyplot as plt
 
@@ -39,7 +38,7 @@ from pydub import AudioSegment  # converts formats
 
 import time
 
-from pitch_detection import MATLAB_Pitches
+from pitch_detection import MATLAB_Pitches, plot_pitches
 
 OUTPUT_FOLDER = 'output_files'
 PRODUCE_SPECTROGRAM = False
@@ -289,7 +288,7 @@ if __name__ == '__main__':
     print("\tOther Pitches")
     other_pitches, other_s = MATLAB_Pitches(f"{STEMS_FOLDER}/other.wav")
 
-    # Plot all together on subplots
+    # Plot all pitches together on subplots
     print("\nGenerating Pitch Plots")
     fig, axs = plt.subplots(4, 1)
     axs[0].plot(vocals_s, vocals_pitches)
@@ -307,56 +306,18 @@ if __name__ == '__main__':
 
     """
     Uncomment the code below to output a plot with the y-axis labeled with notes
-    Change the "range(4,5)" to include the range of octaves you wish to plot
-        (for example, C4 to C5 is default) 
     """
-    # Plot individually with labeled notes on y-axis
-    # note_freqs = []
-    # note_names = []
-    #
-    # for i in range(4, 5):
-    #     note_freqs.extend(
-    #         librosa.note_to_hz([
-    #             f'C{i}',
-    #             # f'C#{i}',
-    #             f'D{i}',
-    #             # f'D#{i}',
-    #             f'E{i}',
-    #             f'F{i}',
-    #             # f'F#{i}',
-    #             f'G{i}',
-    #             # f'G#{i}',
-    #             f'A{i}',
-    #             # f'A#{i}',
-    #             f'B{i}',
-    #             f'C{i+1}'
-    #         ])
-    #     )
-    #
-    #     note_names.extend([
-    #         f'C{i}',
-    #         # f'C#{i}',
-    #         f'D{i}',
-    #         # f'D#{i}',
-    #         f'E{i}',
-    #         f'F{i}',
-    #         # f'F#{i}',
-    #         f'G{i}',
-    #         # f'G#{i}',
-    #         f'A{i}',
-    #         # f'A#{i}',
-    #         f'B{i}',
-    #         f'C{i+1}'
-    #     ])
-    # plt.plot(other_s, other_pitches)
-    # plt.yticks(note_freqs, note_names, fontsize=40, rotation=90)
-    # plt.xticks(fontsize=40)
-    # plt.title("C Major Scale Pitches", fontsize=60)
-    # plt.xlabel("Time (s)", fontsize=60)
-    # plt.show()
+    # plot_pitches(other_s, other_pitches)
 
     path = os.path.join(os.path.abspath(os.getcwd()), OUTPUT_SONG_FOLDER)
-    os.startfile(path)
+
+    # Opens output folder - different on different OS's
+    if platform.system() == "Windows":
+        os.startfile(path)
+    elif platform.system() == "Darwin":  # macos
+        import subprocess
+        subprocess.Popen(["open", path])
+
     print(f"\nComplete in {round(time.time() - startTime, 2)} s")
     print("Output Files Here:")
     print(f'\t{path}')

@@ -1,7 +1,13 @@
 # Music Transcriber
 
+_Updated on 4/14/2024_
+
 ### Overview
-Uses [Hybrid Demucs](https://github.com/facebookresearch/demucs), a source separation model based on the U-Net 
+This project was created as a final project for EECS 351 at the University of Michigan.
+The goal is to separate a song into multiple "stems" of vocals, drums, bass, and other. Then,
+the system will transcribe the stems into notation with the ultimate goal of creating sheet music.
+
+It uses [Hybrid Demucs](https://github.com/facebookresearch/demucs), a source separation model based on the U-Net 
 convolutional network inspired by Wave U-Net. This project followed and expanded upon 
 [this](https://github.com/pytorch/audio/blob/main/examples/tutorials/hybrid_demucs_tutorial.py) PyTorch tuturial.
 
@@ -23,13 +29,37 @@ convolutional network inspired by Wave U-Net. This project followed and expanded
 - To do this, it may be required to download the latest version of MATLAB
   - As of Winter 2024, MATLAB 2024a is required.
 
-**_TroubleShooting_**
+**_MAC:_**
+- Delete ffmpeg.exe and ffprobe.exe files and follow "ffmpeg or ffprobe 
+error" in Troubleshooting below
+
+**_Troubleshooting_** \
+Various solutions to issues we ran into - mostly Mac OS related
 - If the ```librosa``` package does not download correctly, it is not completely necessary
 for the program to run. It is used for plotting notes on the y-axis and is already
 commented-out.
 - MATLAB error: make sure you have **MATLAB 2024a** or newer installed
   - try ```pip install matlabengine```
+- MAC: Need MATLAB version and python version to match, as in they would both
+have to be apple silicon or intel versions.
+  - VSCode: Create a new virtual environment venv using the correct python interpreter
+- If having troubles with python 3.9 or lower, download python 3.11 to update python
+- use ```python --version``` to check version of python
+  - if version does not immediately change, check ```python3 --version```
+  - then use ```alias python=python3``` to update ```python``` version to match
+- ffmpeg or ffprobe error:
+  - Download ffmpeg.exe and ffprobe.exe from https://ffbinaries.com/downloads and extract in Downloads
+  - Run this is terminal
+```
+sudo cp Downloads/ffmpeg /usr/local/bin/
+sudo chmod 755 /usr/local/bin/ffmpeg
+ffmpeg
 
+sudo cp Downloads/ffprobe /usr/local/bin/
+sudo chmod 755 /usr/local/bin/ffprobe
+ffprobe
+```
+- URL Error: Macintosh HD > Applications > Python3.11 folder (or whatever version of python you're using) > double click on "Install Certificates.command" file.
 
 ### How to Use Song Splitter and Music Transcriber
 

@@ -2,3 +2,5 @@ librosa==0.10.1
 matlab==0.1
 matplotlib==3.8.3
 pydub==0.25.1
+ffmpeg==1.4
+ffprobe=0.5
