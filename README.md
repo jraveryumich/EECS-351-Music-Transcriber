@@ -24,15 +24,18 @@ convolutional network inspired by Wave U-Net. This project followed and expanded
   - As of Winter 2024, MATLAB 2024a is required.
 
 **_TroubleShooting_**
-- If the librosa package does not download correctly, it is not completely necessary
+- If the ```librosa``` package does not download correctly, it is not completely necessary
 for the program to run. It is used for plotting notes on the y-axis and is already
 commented-out.
+- MATLAB error: make sure you have **MATLAB 2024a** or newer installed
+  - try ```pip install matlabengine```
 
 
 ### How to Use Song Splitter and Music Transcriber
 
 - Download Song Splitter zip and extract to a project folder
-- Double Click "Transcriber.bat" to run **OR** use the main.py file to run the program. 
+- If on Windows, Double Click "Transcriber.bat" to run
+- If on MAC, run in terminal: ```python main.py``` 
   - To create desktop shortcut: Right Click "Transcriber.bat" and Send To -> Desktop (Create Shortcut)
 - Windows defender may flag the Transcriber.bat as a "harmful" file to run. If this is the case, select "more info" and run away.
 - On startup, the program will check package requirements and open a folder if successful.
