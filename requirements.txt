@@ -2,5 +2,3 @@ librosa==0.10.1
 matlab==0.1
 matplotlib==3.8.3
 pydub==0.25.1
-
-// Follow instructions in README.md to install pytorch and torchaudio

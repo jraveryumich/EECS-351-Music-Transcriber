@@ -280,7 +280,7 @@ if __name__ == '__main__':
     print("\tVocal Pitches")
     vocals_pitches, vocals_s = MATLAB_Pitches(f"{STEMS_FOLDER}/vocals.wav")
 
-    print("\tBase Pitches")
+    print("\tBass Pitches")
     bass_pitches, bass_s = MATLAB_Pitches(f"{STEMS_FOLDER}/bass.wav")
 
     print("\tDrums Pitches")
@@ -305,51 +305,55 @@ if __name__ == '__main__':
     plt.savefig(os.path.join(PLOTS_FOLDER, 'pitches.png'))
     plt.close(fig)
 
+    """
+    Uncomment the code below to output a plot with the y-axis labeled with notes
+    Change the "range(4,5)" to include the range of octaves you wish to plot
+        (for example, C4 to C5 is default) 
+    """
     # Plot individually with labeled notes on y-axis
-    # other_notes = librosa.hz_to_note(other_pitches)
-    note_freqs = []
-    note_names = []
-
-    for i in range(4, 5):
-        note_freqs.extend(
-            librosa.note_to_hz([
-                f'C{i}',
-                # f'C#{i}',
-                f'D{i}',
-                # f'D#{i}',
-                f'E{i}',
-                f'F{i}',
-                # f'F#{i}',
-                f'G{i}',
-                # f'G#{i}',
-                f'A{i}',
-                # f'A#{i}',
-                f'B{i}',
-                f'C{i+1}'
-            ])
-        )
-
-        note_names.extend([
-            f'C{i}',
-            # f'C#{i}',
-            f'D{i}',
-            # f'D#{i}',
-            f'E{i}',
-            f'F{i}',
-            # f'F#{i}',
-            f'G{i}',
-            # f'G#{i}',
-            f'A{i}',
-            # f'A#{i}',
-            f'B{i}',
-            f'C{i+1}'
-        ])
-    plt.plot(other_s, other_pitches)
-    plt.yticks(note_freqs, note_names, fontsize=40, rotation=90)
-    plt.xticks(fontsize=40)
-    plt.title("C Major Scale Pitches", fontsize=60)
-    plt.xlabel("Time (s)", fontsize=60)
-    plt.show()
+    # note_freqs = []
+    # note_names = []
+    #
+    # for i in range(4, 5):
+    #     note_freqs.extend(
+    #         librosa.note_to_hz([
+    #             f'C{i}',
+    #             # f'C#{i}',
+    #             f'D{i}',
+    #             # f'D#{i}',
+    #             f'E{i}',
+    #             f'F{i}',
+    #             # f'F#{i}',
+    #             f'G{i}',
+    #             # f'G#{i}',
+    #             f'A{i}',
+    #             # f'A#{i}',
+    #             f'B{i}',
+    #             f'C{i+1}'
+    #         ])
+    #     )
+    #
+    #     note_names.extend([
+    #         f'C{i}',
+    #         # f'C#{i}',
+    #         f'D{i}',
+    #         # f'D#{i}',
+    #         f'E{i}',
+    #         f'F{i}',
+    #         # f'F#{i}',
+    #         f'G{i}',
+    #         # f'G#{i}',
+    #         f'A{i}',
+    #         # f'A#{i}',
+    #         f'B{i}',
+    #         f'C{i+1}'
+    #     ])
+    # plt.plot(other_s, other_pitches)
+    # plt.yticks(note_freqs, note_names, fontsize=40, rotation=90)
+    # plt.xticks(fontsize=40)
+    # plt.title("C Major Scale Pitches", fontsize=60)
+    # plt.xlabel("Time (s)", fontsize=60)
+    # plt.show()
 
     path = os.path.join(os.path.abspath(os.getcwd()), OUTPUT_SONG_FOLDER)
     os.startfile(path)
