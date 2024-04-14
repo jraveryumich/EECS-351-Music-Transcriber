@@ -1,9 +1,34 @@
+"""
+Created for EECS 351 Final Project - Music Transcriber
+
+Authors: Jacob Avery, Ethan Regan, Jae Un Pae
+
+Referenced this tutorial: https://pytorch.org/audio/stable/tutorials/hybrid_demucs_tutorial.html
+
+*********************************************************************************
+To Use:
+- Run Script
+- Select a song on your device from the window popup
+    - supports most formats ex: mp3, m4a, wav (will error if format is wrong)
+        - Can add more formats as needed
+    - "cancel" will stop the program
+    - "select" starts the process
+- Wait for program to finish
+    - Progress updates are printed in terminal
+- On finish, the output folder will open with the stems and spectrogram plots
+*********************************************************************************
+"""
+
 import os.path
 import urllib.error
 
 import tkinter
 from tkinter import filedialog
+
 import torch, torchaudio
+import torchaudio.prototype.transforms
+
+import librosa
 
 import matplotlib.pyplot as plt
 
@@ -14,21 +39,10 @@ from pydub import AudioSegment  # converts formats
 
 import time
 
-"""
-
-To Use:
-- Copy Song into "input_songs" file
-    - must be a .wav file
-- Edit "SONG_NAME" parameter below to the name of the song
-- Run Script
-
-"""
-
-# SONG_NAME = '04 Stand By Me'
-# SONG_FORMAT = 'm4a'  # supports most formats ex: mp3, m4a, wav (will error if format is wrong)
-
+from pitch_detection import MATLAB_Pitches
 
 OUTPUT_FOLDER = 'output_files'
+PRODUCE_SPECTROGRAM = False
 
 
 def construct_pipeline():
@@ -105,6 +119,9 @@ def separate_sources(model, mix, segment=10.0, overlap=0.1, device=None):
 
 
 def plot_spectrogram(stft, title="Spectrogram"):
+    """
+    Plots a spectrogram of the fourier transform.
+    """
     magnitude = stft.abs()
     spectrogram = 20 * torch.log10(magnitude + 1e-8).numpy()
     fig, axis = plt.subplots(1, 1)
@@ -116,7 +133,7 @@ def plot_spectrogram(stft, title="Spectrogram"):
     plt.close(fig)
 
 
-def output_results(predicted_source: torch.Tensor, predicted_source_spec: torch.Tensor, source: str):
+def output_results(predicted_source: torch.Tensor, source: str, predicted_source_spec: torch.Tensor = None):
     """
     Outputs the results of the model as the 4 stems and 4 spectrograms.
     :param predicted_source: entire stem
@@ -127,7 +144,9 @@ def output_results(predicted_source: torch.Tensor, predicted_source_spec: torch.
 
     torchaudio.save(os.path.join(STEMS_FOLDER, source + '.wav'), predicted_source, sample_rate=sample_rate,
                     bits_per_sample=16, encoding='PCM_S')
-    plot_spectrogram(stft(predicted_source_spec)[0], f"Spectrogram - {source}")
+
+    if PRODUCE_SPECTROGRAM and (predicted_source_spec is not None):
+        plot_spectrogram(stft(predicted_source_spec)[0], f"Spectrogram - {source}")
 
 
 if __name__ == '__main__':
@@ -218,43 +237,122 @@ if __name__ == '__main__':
 
     # Audio Segmenting and Processing
     """
-    Below is the processing steps and segmenting 5 seconds of the tracks to feed into the
-    spectrogram and to calculate the respective SDR scores.
+    Below is the processing steps and segmenting a few seconds of the tracks to feed into the
+    spectrogram.
     """
     print("\tSegmenting Audio")
 
-    segment_start = 150
-    segment_end = 155
+    # segment_start = 34.398
+    # segment_end = 45.224
+    segment_start = 0
+    segment_end = 3
 
-    frame_start = segment_start * sample_rate
-    frame_end = segment_end * sample_rate
+    frame_start = int(segment_start * sample_rate)
+    frame_end = int(segment_end * sample_rate)
 
     drums_spec = audios["drums"][:, frame_start:frame_end].cpu()
     bass_spec = audios["bass"][:, frame_start:frame_end].cpu()
     vocals_spec = audios["vocals"][:, frame_start:frame_end].cpu()
     other_spec = audios["other"][:, frame_start:frame_end].cpu()
     mix_spec = mixture[:, frame_start:frame_end].cpu()
+    # mix_spec = mixture.cpu()
 
     # Spectrograms and Audio
     print("\tCreating Spectrograms")
 
     # Mixture Clip
-    plot_spectrogram(stft(mix_spec)[0], "Spectrogram - Mixture")
+    # plot_spectrogram(stft(mix_spec)[0], "Spectrogram - Mixture")
 
     print("\n------------------------------------\n")
     print("Creating Output Files")
     print("\tDrums")
-    output_results(drums, drums_spec, "drums")
+    output_results(drums, "drums", drums_spec)
     print("\tBass")
-    output_results(bass, bass_spec, "bass")
+    output_results(bass, "bass", bass_spec)
     print("\tVocals")
-    output_results(vocals, vocals_spec, "vocals")
+    output_results(vocals, "vocals", vocals_spec)
     print("\tOther")
-    output_results(other, other_spec, "other")
+    output_results(other, "other", other_spec)
 
-    path = os.path.join(os.path.abspath(os.getcwd()),  OUTPUT_SONG_FOLDER)
+    # Pitch Detection
+    print("\nPitch Detection")
+
+    print("\tVocal Pitches")
+    vocals_pitches, vocals_s = MATLAB_Pitches(f"{STEMS_FOLDER}/vocals.wav")
+
+    print("\tBase Pitches")
+    bass_pitches, bass_s = MATLAB_Pitches(f"{STEMS_FOLDER}/bass.wav")
+
+    print("\tDrums Pitches")
+    drums_pitches, drums_s = MATLAB_Pitches(f"{STEMS_FOLDER}/drums.wav")
+
+    print("\tOther Pitches")
+    other_pitches, other_s = MATLAB_Pitches(f"{STEMS_FOLDER}/other.wav")
+
+    # Plot all together on subplots
+    print("\nGenerating Pitch Plots")
+    fig, axs = plt.subplots(4, 1)
+    axs[0].plot(vocals_s, vocals_pitches)
+    axs[0].set_title("Vocals", fontsize=20)
+    axs[1].plot(bass_s, bass_pitches)
+    axs[1].set_title("Bass", fontsize=20)
+    axs[2].plot(drums_s, drums_pitches)
+    axs[2].set_title("Drums", fontsize=20)
+    axs[3].plot(other_s, other_pitches)
+    axs[3].set_title("Other", fontsize=20)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(PLOTS_FOLDER, 'pitches.png'))
+    plt.close(fig)
+
+    # Plot individually with labeled notes on y-axis
+    # other_notes = librosa.hz_to_note(other_pitches)
+    note_freqs = []
+    note_names = []
+
+    for i in range(4, 5):
+        note_freqs.extend(
+            librosa.note_to_hz([
+                f'C{i}',
+                # f'C#{i}',
+                f'D{i}',
+                # f'D#{i}',
+                f'E{i}',
+                f'F{i}',
+                # f'F#{i}',
+                f'G{i}',
+                # f'G#{i}',
+                f'A{i}',
+                # f'A#{i}',
+                f'B{i}',
+                f'C{i+1}'
+            ])
+        )
+
+        note_names.extend([
+            f'C{i}',
+            # f'C#{i}',
+            f'D{i}',
+            # f'D#{i}',
+            f'E{i}',
+            f'F{i}',
+            # f'F#{i}',
+            f'G{i}',
+            # f'G#{i}',
+            f'A{i}',
+            # f'A#{i}',
+            f'B{i}',
+            f'C{i+1}'
+        ])
+    plt.plot(other_s, other_pitches)
+    plt.yticks(note_freqs, note_names, fontsize=40, rotation=90)
+    plt.xticks(fontsize=40)
+    plt.title("C Major Scale Pitches", fontsize=60)
+    plt.xlabel("Time (s)", fontsize=60)
+    plt.show()
+
+    path = os.path.join(os.path.abspath(os.getcwd()), OUTPUT_SONG_FOLDER)
     os.startfile(path)
     print(f"\nComplete in {round(time.time() - startTime, 2)} s")
     print("Output Files Here:")
     print(f'\t{path}')
-
