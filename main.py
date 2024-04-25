@@ -26,6 +26,10 @@ import tkinter
 from tkinter import filedialog
 import platform
 
+import librosa.onset
+import numpy
+from librosa import beat
+from librosa import onset
 import torch, torchaudio
 import torchaudio.prototype.transforms
 
@@ -38,7 +42,7 @@ from pydub import AudioSegment  # converts formats
 
 import time
 
-from pitch_detection import MATLAB_Pitches, plot_pitches
+from transcribe import transcribeWithMuseScore
 
 OUTPUT_FOLDER = 'output_files'
 PRODUCE_SPECTROGRAM = False
@@ -160,6 +164,7 @@ if __name__ == '__main__':
         print(f"\tUsing GPU: {torch.cuda.get_device_name(torch.cuda.current_device())}")
 
     # File Stuff
+    print("Window Open")
     tkinter.Tk().withdraw()
     filepath = filedialog.askopenfilename(
         initialdir='Music',
@@ -257,7 +262,7 @@ if __name__ == '__main__':
     # mix_spec = mixture.cpu()
 
     # Spectrograms and Audio
-    print("\tCreating Spectrograms")
+    # print("\tCreating Spectrograms")
 
     # Mixture Clip
     # plot_spectrogram(stft(mix_spec)[0], "Spectrogram - Mixture")
@@ -273,41 +278,57 @@ if __name__ == '__main__':
     print("\tOther")
     output_results(other, "other", other_spec)
 
+    print("\nGenerating Transcription")
+    transcribeWithMuseScore(STEMS_FOLDER, "vocals.wav")
+    transcribeWithMuseScore(STEMS_FOLDER, "bass.wav")
+    transcribeWithMuseScore(STEMS_FOLDER, "drums.wav")
+    transcribeWithMuseScore(STEMS_FOLDER, "other.wav")
+
     # Pitch Detection
-    print("\nPitch Detection")
-
-    print("\tVocal Pitches")
-    vocals_pitches, vocals_s = MATLAB_Pitches(f"{STEMS_FOLDER}/vocals.wav")
-
-    print("\tBass Pitches")
-    bass_pitches, bass_s = MATLAB_Pitches(f"{STEMS_FOLDER}/bass.wav")
-
-    print("\tDrums Pitches")
-    drums_pitches, drums_s = MATLAB_Pitches(f"{STEMS_FOLDER}/drums.wav")
-
-    print("\tOther Pitches")
-    other_pitches, other_s = MATLAB_Pitches(f"{STEMS_FOLDER}/other.wav")
+    # print("\nPitch Detection")
+    #
+    # print("\tVocal Pitches")
+    # vocals_pitches, vocals_s = MATLAB_Pitches(f"{STEMS_FOLDER}/vocals.wav")
+    #
+    # print("\tBass Pitches")
+    # bass_pitches, bass_s = MATLAB_Pitches(f"{STEMS_FOLDER}/bass.wav")
+    #
+    # print("\tDrums Pitches")
+    # drums_pitches, drums_s = MATLAB_Pitches(f"{STEMS_FOLDER}/drums.wav")
+    #
+    # print("\tOther Pitches")
+    # other_pitches, other_s = MATLAB_Pitches(f"{STEMS_FOLDER}/other.wav")
 
     # Plot all pitches together on subplots
-    print("\nGenerating Pitch Plots")
-    fig, axs = plt.subplots(4, 1)
-    axs[0].plot(vocals_s, vocals_pitches)
-    axs[0].set_title("Vocals", fontsize=20)
-    axs[1].plot(bass_s, bass_pitches)
-    axs[1].set_title("Bass", fontsize=20)
-    axs[2].plot(drums_s, drums_pitches)
-    axs[2].set_title("Drums", fontsize=20)
-    axs[3].plot(other_s, other_pitches)
-    axs[3].set_title("Other", fontsize=20)
+    # print("\nGenerating Pitch Plots")
+    # fig, axs = plt.subplots(4, 1)
+    # axs[0].plot(vocals_s, vocals_pitches)
+    # axs[0].set_title("Vocals", fontsize=20)
+    # axs[1].plot(bass_s, bass_pitches)
+    # axs[1].set_title("Bass", fontsize=20)
+    # axs[2].plot(drums_s, drums_pitches)
+    # axs[2].set_title("Drums", fontsize=20)
+    # axs[3].plot(other_s, other_pitches)
+    # axs[3].set_title("Other", fontsize=20)
 
-    plt.tight_layout()
-    plt.savefig(os.path.join(PLOTS_FOLDER, 'pitches.png'))
-    plt.close(fig)
+    # plt.tight_layout()
+    # plt.savefig(os.path.join(PLOTS_FOLDER, 'pitches.png'))
+    # plt.close(fig)
 
     """
     Uncomment the code below to output a plot with the y-axis labeled with notes
     """
     # plot_pitches(other_s, other_pitches)
+
+    # Tempo and BPM
+    # print("\nCalculating BPM")
+    # tempo = calculate_tempo(SONG_FILE)
+    # print("Tempo: " + str(tempo))
+
+    # Music21
+    # print("\nTranscribing Stems")
+    # stem = "bass"
+    # os.path.join(STEMS_FOLDER, stem + '.wav')
 
     path = os.path.join(os.path.abspath(os.getcwd()), OUTPUT_SONG_FOLDER)
 

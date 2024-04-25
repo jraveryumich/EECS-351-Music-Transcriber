@@ -35,9 +35,6 @@ error" in Troubleshooting below
 
 **_Troubleshooting_** \
 Various solutions to issues we ran into - mostly Mac OS related
-- If the ```librosa``` package does not download correctly, it is not completely necessary
-for the program to run. It is used for plotting notes on the y-axis and is already
-commented-out.
 - MATLAB error: make sure you have **MATLAB 2024a** or newer installed
   - try ```pip install matlabengine```
 - MAC: Need MATLAB version and python version to match, as in they would both

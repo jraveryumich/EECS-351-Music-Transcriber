@@ -7,9 +7,10 @@ Description: Function that runs a MATLAB script using the "pitch" function.
 """
 
 
-# Runs Matlab "pitch" function - used on stemss
+# Runs Matlab "pitch" function - used on stems
 import matlab.engine
 import matplotlib.pyplot as plt
+import librosa
 
 
 m_eng = matlab.engine.start_matlab()
@@ -37,7 +38,6 @@ def plot_pitches(s, pitches):
     :param s: seconds output from MATLAB_Pitches
     :param pitches: pitches output from MATLAB_Pitches
     """
-    import librosa
 
     """
     Change the "range(4,5)" to include the range of octaves you wish to plot
