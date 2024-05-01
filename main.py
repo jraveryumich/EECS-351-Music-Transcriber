@@ -3,20 +3,34 @@ Created for EECS 351 Final Project - Music Transcriber
 
 Authors: Jacob Avery, Ethan Regan, Jae Un Pae
 
+High-Level Description: Compiles all findings from this project into one 'main' script. It takes a song or audio signal
+                        runs the Hybrid Demucs machine learning algorithm on the signal, splitting the song into
+                        'vocals', 'drums', 'bass', and 'other' tracks. Spectrograms of each of these splits are created
+                        and the splits are converted to .wav files and outputted to the 'output_files' folder. Then,
+                        pitch detection using a custom polyphonic pitch detection algorithm is run on the separated
+                        tracks and this information is stored in a MIDI file in the output folder. Finally, once the
+                        program completes, the generated MIDI file can be opened in a music notation
+                        software - we recommend MuseScore.
+
 Referenced this tutorial: https://pytorch.org/audio/stable/tutorials/hybrid_demucs_tutorial.html
 
 *********************************************************************************
 To Use:
 - Run Script
 - Select a song on your device from the window popup
+    - We have provided sample songs to run, but feel free to run any song through
+        the algorithm
     - supports most formats ex: mp3, m4a, wav (will error if format is wrong)
         - Can add more formats as needed
     - "cancel" will stop the program
     - "select" starts the process
 - Wait for program to finish
     - Progress updates are printed in terminal
-- On finish, the output folder will open with the stems and spectrogram plots
+- On finish, the output folder will open with the generated output files
 *********************************************************************************
+
+* Reference the files titled "Sample_..." for more in depth summaries of functionally
+    and samples of how each aspect of the project runs
 """
 
 import os.path
@@ -25,27 +39,23 @@ import urllib.error
 import tkinter
 from tkinter import filedialog
 import platform
-
-import librosa.onset
-import numpy
-from librosa import beat
-from librosa import onset
 import torch, torchaudio
 import torchaudio.prototype.transforms
 
 import matplotlib.pyplot as plt
 
-from torchaudio.pipelines import HDEMUCS_HIGH_MUSDB_PLUS  # demucs model
+from torchaudio.pipelines import HDEMUCS_HIGH_MUSDB_PLUS  # hybrid demucs model
 from torchaudio.transforms import Fade
 
 from pydub import AudioSegment  # converts formats
 
 import time
 
-from transcribe import transcribeWithMuseScore
 
+# General Variables
 OUTPUT_FOLDER = 'output_files'
-PRODUCE_SPECTROGRAM = False
+PRODUCE_SPECTROGRAM = True
+TRANSCIBE_USING_POLYPHONIC_ALGORITHM = True  # set to False to use Basic_Pitch ML Algorithm
 
 
 def construct_pipeline():
@@ -145,11 +155,14 @@ def output_results(predicted_source: torch.Tensor, source: str, predicted_source
     :return: none
     """
 
-    torchaudio.save(os.path.join(STEMS_FOLDER, source + '.wav'), predicted_source, sample_rate=sample_rate,
+    path = os.path.join(STEMS_FOLDER, source + '.wav')
+    torchaudio.save(path, predicted_source, sample_rate=sample_rate,
                     bits_per_sample=16, encoding='PCM_S')
 
     if PRODUCE_SPECTROGRAM and (predicted_source_spec is not None):
         plot_spectrogram(stft(predicted_source_spec)[0], f"Spectrogram - {source}")
+
+    return path
 
 
 if __name__ == '__main__':
@@ -182,10 +195,13 @@ if __name__ == '__main__':
     OUTPUT_SONG_FOLDER = os.path.join(OUTPUT_FOLDER, SONG_NAME)
     PLOTS_FOLDER = os.path.join(OUTPUT_SONG_FOLDER, 'plots')
     STEMS_FOLDER = os.path.join(OUTPUT_SONG_FOLDER, 'stems')
+    TRANSCRIPTIONS_FOLDER = os.path.join(OUTPUT_SONG_FOLDER, 'transcriptions')
     if not os.path.exists(STEMS_FOLDER):
         os.makedirs(STEMS_FOLDER)
     if not os.path.exists(PLOTS_FOLDER):
         os.makedirs(PLOTS_FOLDER)
+    if not os.path.exists(TRANSCRIPTIONS_FOLDER):
+        os.makedirs(TRANSCRIPTIONS_FOLDER)
 
     # Convert audio to wav if needed
     song = AudioSegment.from_file(filepath, format=str(SONG_FORMAT).split(".")[1])
@@ -226,24 +242,11 @@ if __name__ == '__main__':
     other = audios["other"].cpu()
 
     # Separate Track
-    """
-    The default set of pretrained weights that has been loaded has 4 sources
-    that it is separated into: drums, bass, other, and vocals in that order. They
-    have been stored into the dict "audios" and therefore can be accessed there. For 
-    the four sources, there is a separate cell for each that will create the audio, the
-    spectrogram graph, and calculate the SDR score. SDR is the signal-to-distortion ratio,
-    essentially a representation to the "quality" of an audio track.
-    """
-
     N_FFT = 4096
     N_HOP = 4
     stft = torchaudio.transforms.Spectrogram(n_fft=N_FFT, hop_length=N_HOP, power=None)
 
     # Audio Segmenting and Processing
-    """
-    Below is the processing steps and segmenting a few seconds of the tracks to feed into the
-    spectrogram.
-    """
     print("\tSegmenting Audio")
 
     # segment_start = 34.398
@@ -262,80 +265,56 @@ if __name__ == '__main__':
     # mix_spec = mixture.cpu()
 
     # Spectrograms and Audio
-    # print("\tCreating Spectrograms")
-
+    print("\tCreating Spectrograms")
     # Mixture Clip
-    # plot_spectrogram(stft(mix_spec)[0], "Spectrogram - Mixture")
+    plot_spectrogram(stft(mix_spec)[0], "Spectrogram - Mixture")
 
     print("\n------------------------------------\n")
     print("Creating Output Files")
     print("\tDrums")
-    output_results(drums, "drums", drums_spec)
+    drums_path = output_results(drums, "drums", drums_spec)
     print("\tBass")
-    output_results(bass, "bass", bass_spec)
+    bass_path = output_results(bass, "bass", bass_spec)
     print("\tVocals")
-    output_results(vocals, "vocals", vocals_spec)
+    vocals_path = output_results(vocals, "vocals", vocals_spec)
     print("\tOther")
-    output_results(other, "other", other_spec)
-
-    print("\nGenerating Transcription")
-    transcribeWithMuseScore(STEMS_FOLDER, "vocals.wav")
-    transcribeWithMuseScore(STEMS_FOLDER, "bass.wav")
-    transcribeWithMuseScore(STEMS_FOLDER, "drums.wav")
-    transcribeWithMuseScore(STEMS_FOLDER, "other.wav")
+    other_path = output_results(other, "other", other_spec)
 
     # Pitch Detection
-    # print("\nPitch Detection")
-    #
-    # print("\tVocal Pitches")
-    # vocals_pitches, vocals_s = MATLAB_Pitches(f"{STEMS_FOLDER}/vocals.wav")
-    #
-    # print("\tBass Pitches")
-    # bass_pitches, bass_s = MATLAB_Pitches(f"{STEMS_FOLDER}/bass.wav")
-    #
-    # print("\tDrums Pitches")
-    # drums_pitches, drums_s = MATLAB_Pitches(f"{STEMS_FOLDER}/drums.wav")
-    #
-    # print("\tOther Pitches")
-    # other_pitches, other_s = MATLAB_Pitches(f"{STEMS_FOLDER}/other.wav")
+    print("\nPitch Detection")
 
-    # Plot all pitches together on subplots
-    # print("\nGenerating Pitch Plots")
-    # fig, axs = plt.subplots(4, 1)
-    # axs[0].plot(vocals_s, vocals_pitches)
-    # axs[0].set_title("Vocals", fontsize=20)
-    # axs[1].plot(bass_s, bass_pitches)
-    # axs[1].set_title("Bass", fontsize=20)
-    # axs[2].plot(drums_s, drums_pitches)
-    # axs[2].set_title("Drums", fontsize=20)
-    # axs[3].plot(other_s, other_pitches)
-    # axs[3].set_title("Other", fontsize=20)
+    # Transcribe using custom algorithm or an ML - both have benefits and drawbacks
+    if TRANSCIBE_USING_POLYPHONIC_ALGORITHM:
+        from Sample_Polyphonic_Transcription import Transcribe
+        print("\tTranscribing Using Polyphonic Pitch Detection\n")
 
-    # plt.tight_layout()
-    # plt.savefig(os.path.join(PLOTS_FOLDER, 'pitches.png'))
-    # plt.close(fig)
+        print("\tVocals")
+        Transcribe([vocals_path], [22], "vocals", False, TRANSCRIPTIONS_FOLDER)
+        print("\tOther")
+        Transcribe([other_path], [0], "other", False, TRANSCRIPTIONS_FOLDER)
+        print("\tBass")
+        Transcribe([bass_path], [33], "bass", False, TRANSCRIPTIONS_FOLDER)
+        print("\tAll Parts")
+        Transcribe([vocals_path, other_path, bass_path], [22, 0, 33], "score", False, TRANSCRIPTIONS_FOLDER)
+    else:
+        from Sample_Basic_Pitch import Transcribe
+        print("\tTranscribing Using Basic Pitch\n")
 
-    """
-    Uncomment the code below to output a plot with the y-axis labeled with notes
-    """
-    # plot_pitches(other_s, other_pitches)
-
-    # Tempo and BPM
-    # print("\nCalculating BPM")
-    # tempo = calculate_tempo(SONG_FILE)
-    # print("Tempo: " + str(tempo))
-
-    # Music21
-    # print("\nTranscribing Stems")
-    # stem = "bass"
-    # os.path.join(STEMS_FOLDER, stem + '.wav')
+        print("\tVocals")
+        Transcribe([vocals_path], [22], [0.4], "vocals", TRANSCRIPTIONS_FOLDER)
+        print("\tOther")
+        Transcribe([other_path], [0], [0.5], "other", TRANSCRIPTIONS_FOLDER)
+        print("\tBass")
+        Transcribe([bass_path], [33], [0.3], "bass", TRANSCRIPTIONS_FOLDER)
+        print("\tAll Parts")
+        Transcribe([vocals_path, other_path, bass_path], [22, 0, 33], [0.4, 0.5, 0.3], "score", TRANSCRIPTIONS_FOLDER)
 
     path = os.path.join(os.path.abspath(os.getcwd()), OUTPUT_SONG_FOLDER)
 
     # Opens output folder - different on different OS's
     if platform.system() == "Windows":
         os.startfile(path)
-    elif platform.system() == "Darwin":  # macos
+    elif platform.system() == "Darwin":  # MAC OS
         import subprocess
         subprocess.Popen(["open", path])
 

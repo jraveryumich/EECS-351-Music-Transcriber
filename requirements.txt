@@ -1,8 +1,5 @@
-librosa==0.10.1
-matlab==0.1
-matplotlib==3.8.3
-pydub==0.25.1
-future~=1.0.0
-numpy~=1.26.3
-scipy~=1.13.0
-music21~=9.1.0
+matplotlib
+numpy
+scipy
+librosa
+pretty_midi

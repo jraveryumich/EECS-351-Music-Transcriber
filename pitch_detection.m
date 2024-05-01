@@ -1,19 +1,21 @@
-%% Referenced this page here https://matlab.mathworks.com/
-%% "clear sound" to stop audio
+%{
+Created for EECS 351 Final Project - Music Transcriber
 
-%end goal is to get pitches from music with mono audio and 
+Authors: Jacob Avery, Ethan Regan, Jae Un Pae
 
+Description: Detects pitches from music with mono audio
 
-% TODO
-% Add Measures (visual aid)
-% Flatten plateaus
-% Export as a list
+Requires: Audio Toolbox
 
+Reference:
+https://matlab.mathworks.com/
+
+%}
 
 % Filename path relative to project path
 function [pitches, s] = pitch_detection(filename)
-    
     [song,fs] = audioread(filename);
+
 
     %sound(song,fs)
     
@@ -32,18 +34,12 @@ function [pitches, s] = pitch_detection(filename)
     %Process the song
     method = "SRH";
     range = [1, 800]; % hertz
-    winDur = 0.1; % seconds                     %% increase for lower res
+    winDur = 0.1; % seconds, increase for lower res
     overlapDur = 0.06; % seconds
     medFiltLength = 10; % frames
     
     winLength = round(winDur*fs);
     overlapLength = round(overlapDur*fs);
-    % [f0,loc] = pitch(song,fs, ...
-    %      Method=method, ...
-    %      Range=range, ...
-    %      WindowLength=winLength, ...
-    %      OverlapLength=overlapLength, ...
-    %      MedianFilterLength=medFiltLength);
     
     [pitches, s] = pitch(song,fs, ...
         Method=method, ...
@@ -55,7 +51,6 @@ function [pitches, s] = pitch_detection(filename)
     s = s/fs;
     
     % Remove stray notes
-    
     for i = 3:length(pitches) - 2
         left2 = pitches(i-2);
         left1 = pitches(i-1);
@@ -67,10 +62,6 @@ function [pitches, s] = pitch_detection(filename)
             pitches(i) = pitches(i-1);
         end
     end
-
-    % Flatten Plateaus
-    %[TF,S1] = ischange(pitches);
-    %pitches = stairs(S1)
 end
 
 
